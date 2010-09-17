@@ -1,0 +1,75 @@
+<!--
+  copyright (c) 2009 Google inc.
+
+  You are free to copy and use this sample.
+  License can be found here: http://code.google.com/apis/ajaxsearch/faq/#license
+-->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>
+      Google Visualization API Sample
+    </title>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1', {packages: ['annotatedtimeline']});
+    </script>
+    <script type="text/javascript">
+    var visualization;
+
+    function drawVisualization() {
+      // To see the data that this visualization uses, browse to
+      // http://spreadsheets.google.com/ccc?key=pCQbetd-CptGXxxQIG7VFIQ  
+      var query = new google.visualization.Query(
+          'http://134.126.118.94:8080/recent');
+      
+      // Send the query with a callback function.
+      query.send(handleQueryResponse);
+    }
+    
+    
+    
+    
+    
+    function handleQueryResponse(response) {
+      if (response.isError()) {
+        alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+        return;
+      }
+    
+      var data = response.getDataTable();
+      
+      
+          var annotatedtimeline = new google.visualization.AnnotatedTimeLine(
+      document.getElementById('visualization'));
+  annotatedtimeline.draw(data, {
+                                //'allValuesSuffix': '%', // A suffix that is added to all values
+                                'colors': ['blue', 'red'], // The colors to be used
+                                'displayAnnotations': true,
+                                'displayExactValues': true, // Do not truncate values (i.e. using K suffix)
+                                'displayRangeSelector' : false, // Do not sow the range selector
+                                'displayZoomButtons': false, // DO not display the zoom buttons
+//                                'fill': 30, // Fill the area below the lines with 20% opacity
+                                'legendPosition': 'newRow', // Can be sameRow
+                                //'max': 100000, // Override the automatic default
+                                //'min':  100000, // Override the automatic default
+                                'scaleColumns': [0, 1], // Have two scales, by the first and second lines
+                                'scaleType': 'allfixed', // See docs...
+                                'thickness': 1, // Make the lines thicker
+//                                'zoomStartTime': new Date(2009, 1 ,2), //NOTE: month 1 = Feb (javascript to blame)
+//                                'zoomEndTime': new Date(2009, 1 ,5) //NOTE: month 1 = Feb (javascript to blame)
+                               });
+ 
+      
+      
+    }
+
+    google.setOnLoadCallback(drawVisualization);
+    </script>
+  </head>
+  <body style="font-family: Arial;border: 0 none;">
+    <div id="visualization" style="height: 400px; width: 600px;"></div>
+  </body>
+</html>

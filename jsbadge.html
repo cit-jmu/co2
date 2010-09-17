@@ -1,0 +1,46 @@
+<html>
+
+<head>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+    <script type="text/javascript" src="date.js"></script>
+    <script type="text/javascript">
+    $(document).ready(function() {
+        $.getJSON('http://127.0.0.1:8080/?callback=?', function(data) {
+                $("#co2badge-value").text(parseInt(data.data.co2));
+                $("#co2badge-asof").text(Date.parse(data.timestamp.substring(0, 19)).toString('h:mm tt'));
+            });
+    });
+    
+    </script>
+    <style type="text/css">
+        #co2badge {
+            width: 80px;
+            height: 80px;
+            background-color: lightgrey;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-family: sans-serif;
+            -moz-border-radius: 5px;
+            -webkit-border-radius: 5px;
+        }
+        
+        #co2badge-value {
+            font-size: xx-large;
+            font-weight: bolder;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="co2badge">
+    <div id="co2badge-value">n/a</div>
+    <div id="co2badge-asof"></div>
+</div>
+
+
+</body>
+
+</html>
