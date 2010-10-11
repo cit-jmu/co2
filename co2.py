@@ -1,5 +1,5 @@
 from bottle import route, run, response, request
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from getopt import getopt, GetoptError
 from serial import Serial, SerialException
 from simplejson import dumps
@@ -12,6 +12,8 @@ import sys
 import time
 import random
 import gviz_api
+import csv
+import StringIO
 from dateutil import parser as dateparser
 
 
@@ -77,7 +79,7 @@ class Samples(Thread):
                 print err
             time.sleep(10)
 
-        
+
 @route('/')
 def current():
     global samples
@@ -101,6 +103,52 @@ def stats():
     return dict(count=stats[0], earliest=stats[1], latest=stats[2])
 
 
+def average_rows(sql, params, freq=timedelta(0, 60)):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute(sql, params)
+    rows = c.fetchall()
+    values = [float(rows[0][1])]
+    time = dateparser.parse(rows[0][0])
+    data = []
+    for row in rows[1:]:
+        if dateparser.parse(row[0]) - time > freq:
+            avg = sum(values) / len(values)
+            data.append((time, avg))
+            time = dateparser.parse(row[0])
+            values = [float(row[1])]
+        else:
+            values.append(float(row[1]))
+    c.close()
+    return data
+
+
+@route('/csv')
+def download_csv():
+    try:
+        start_date = dateparser.parse(request.GET.get('from')).date()
+    except:
+        start_date = date.today()
+    try:
+        end_date = dateparser.parse(request.GET.get('until')).date()
+    except:
+        end_date = date.today() + timedelta(1)
+    if end_date <= start_date:
+        end_date = start_date + timedelta(1)
+    sql = "SELECT date,co2 FROM samples WHERE date>=? AND date<? ORDER BY date"
+    params = (start_date.isoformat(), end_date.isoformat())
+
+    output = StringIO.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Timestamp', 'Avg CO2'])
+    for row in average_rows(sql, params, timedelta(0, 600)):
+        writer.writerow(row)
+
+    response.header['Content-type'] = 'text/csv'
+    response.header['Content-disposition'] = 'attachment; filename="co2.csv"'
+    return output.getvalue()
+
+
 @route('/recent')
 def recent():
     conn = get_conn()
@@ -114,20 +162,20 @@ def recent():
     for row in rows[1:]:
         if dateparser.parse(row[0]) - time > timedelta(0, 60):
             avg = sum(values) / len(values)
-            data.append((time, avg, 0))
+            data.append((time, avg))
             time = dateparser.parse(row[0])
             values = [float(row[1])]
         else:
             values.append(float(row[1]))
-        
+
     c.close()
-    
-    datatable = gviz_api.DataTable([("time", "datetime"), ("CO2", "number"), ("Temperature", "number")], data=data)
-    
+
+    datatable = gviz_api.DataTable([("time", "datetime"), ("CO2", "number")], data=data)
+
     callback = request.GET.get('responseHandler', 'google.visualization.Query.setResponse')
     return datatable.ToJSonResponse(response_handler=callback)
-    
-    
+
+
 
 if os.environ.get('BOTTLE_CHILD'):
 
@@ -136,6 +184,6 @@ if os.environ.get('BOTTLE_CHILD'):
     samples = Samples(simulate=simulate)
     samples.setDaemon(True)
     samples.start()
-    
+
 
 run(host='0.0.0.0', port=8080, reloader=True)
