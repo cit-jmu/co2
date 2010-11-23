@@ -60,7 +60,11 @@ class Samples(Thread):
                            self.lastsample['celltemp'],
                            self.lastsample['ivolt'])
                           )
-                    conn.commit()
+                    try:
+                        conn.commit()
+                    except OperationalError:
+                        print "Could not commit sample - database locked?"
+                        pass # Ignore locked database error
                     c.close()
             except ExpatError, err:
                 # line was invalid, try again later
@@ -89,6 +93,17 @@ def stats():
     stats = c.fetchone()
     c.close()
     return dict(count=stats[0], earliest=stats[1], latest=stats[2])
+
+
+@route('/fetch/:date')
+def fetch(date):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("SELECT * FROM samples WHERE date>? ORDER BY date LIMIT 1000", (date,))
+    rows = c.fetchall()
+    c.close()
+    return dumps(rows)
+
 
 
 def average_rows(sql, params, freq=timedelta(0, 60)):
