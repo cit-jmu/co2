@@ -97,11 +97,11 @@ def create_month_spreadsheet():
     for row in average_rows(sql, params, timedelta(0, 600)):
         writer.writerow(row)
 
-    o = open('webroot/month.csv', 'w')
+    o = open('webroot/month.csv', 'wb')
     o.write(output.getvalue())
     o.close()
 
-    o = open('webroot/month-%04d%02d.csv' % (today.year, today.month), 'w')
+    o = open('webroot/month-%04d%02d.csv' % (today.year, today.month), 'wb')
     o.write(output.getvalue())
     o.close()
 
